@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bosh sahifa</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand">🌟 MyApp</div>
+    <div class="nav-right">
+      <span class="nav-username" id="navUsername">...</span>
+
+      <!-- Dark Mode Toggle -->
+      <label class="dark-toggle" title="Dark mode">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+          <span class="toggle-icon light">☀️</span>
+          <span class="toggle-icon dark">🌙</span>
+        </span>
+      </label>
+
+      <button class="btn-logout" id="logoutBtn">Chiqish 🚪</button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="welcome-card">
+      <div class="welcome-emoji">🎉</div>
+      <h1>Xush kelibsiz, <span id="welcomeName">...</span>!</h1>
+      <p class="welcome-sub">Siz muvaffaqiyatli tizimga kirdingiz.</p>
+      <div class="user-info-grid">
+        <div class="info-item">
+          <span class="info-label">👤 Username</span>
+          <span class="info-value" id="infoUsername">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">✉️ Email</span>
+          <span class="info-value" id="infoEmail">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">🎨 Mavzu</span>
+          <span class="info-value" id="infoTheme">Yorug'</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">🍪 Cookie</span>
+          <span class="info-value cookie-badge">Aktiv</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cookie/Session info box -->
+    <div class="info-box">
+      <h3>🍪 Cookie & Session haqida</h3>
+      <ul>
+        <li><strong>Session ID</strong> - brauzer cookie sifatida saqlanadi (<code>myapp.sid</code>)</li>
+        <li><strong>Dark mode</strong> - serverda DB ga saqlanadi, login bo'lganda qayta yuklanadi</li>
+        <li><strong>Cookie muddati</strong> - 7 kun (avtomatik uzayadi)</li>
+        <li><strong>Logout</strong> qilsangiz session o'chadi, lekin dark mode DB da saqlanib qoladi</li>
+      </ul>
+    </div>
+  </main>
+
+  <script>
+    // ─── DARK MODE ─────────────────────────────────────────────────────────────
+    const toggle = document.getElementById('darkModeToggle');
+    const themeInfo = document.getElementById('infoTheme');
+
+    function applyTheme(isDark) {
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      toggle.checked = isDark;
+      themeInfo.textContent = isDark ? '🌙 Qorong\'u' : '☀️ Yorug\'';
+    }
+
+    toggle.addEventListener('change', async () => {
+      const isDark = toggle.checked;
+      applyTheme(isDark);
+
+      // Serverga saqlash (session + DB)
+      try {
+        await fetch('/api/dark-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dark_mode: isDark })
+        });
+      } catch (e) {
+        console.error('Dark mode saqlashda xato:', e);
+      }
+    });
+
+    // ─── USER MA'LUMOTLARINI YUKLASH ───────────────────────────────────────────
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/me');
+        if (!res.ok) { window.location.href = '/login'; return; }
+        const { user } = await res.json();
+
+        document.getElementById('navUsername').textContent = '👤 ' + user.username;
+        document.getElementById('welcomeName').textContent = user.username;
+        document.getElementById('infoUsername').textContent = user.username;
+        document.getElementById('infoEmail').textContent = user.email;
+
+        // DB dan kelgan dark_mode ni qo'llash ✅
+        applyTheme(!!user.dark_mode);
+      } catch {
+        window.location.href = '/login';
+      }
+    }
+
+    // ─── LOGOUT ────────────────────────────────────────────────────────────────
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('logoutBtn');
+      btn.disabled = true;
+      btn.textContent = 'Chiqilmoqda...';
+
+      try {
+        const res = await fetch('/api/logout', { method: 'POST' });
+        const result = await res.json();
+        if (result.success) window.location.href = result.redirect;
+      } catch {
+        btn.disabled = false;
+        btn.textContent = 'Chiqish 🚪';
+      }
+    });
+
+    // Sahifa yuklanganida user ma'lumotlarini olish
+    loadUser();
+  </script>
+</body>
+</html>
+

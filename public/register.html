@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ro'yxatdan o'tish</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">🔐</div>
+      <h1 class="auth-title">Ro'yxatdan o'tish</h1>
+      <p class="auth-subtitle">Yangi hisob yarating</p>
+
+      <div id="alert" class="alert hidden"></div>
+
+      <form id="registerForm" autocomplete="off">
+        <div class="form-group">
+          <label for="username">Foydalanuvchi nomi</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" id="username" name="username" placeholder="username123" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <div class="input-wrapper">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="email" name="email" placeholder="email@example.com" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Parol</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="password" name="password" placeholder="Kamida 6 ta belgi" required>
+            <button type="button" class="toggle-pass" onclick="togglePass()">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">
+          <span>Ro'yxatdan o'tish</span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Hisobingiz bormi? <a href="/login">Kirish</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function togglePass() {
+      const p = document.getElementById('password');
+      p.type = p.type === 'password' ? 'text' : 'password';
+    }
+
+    function showAlert(msg, type = 'error') {
+      const a = document.getElementById('alert');
+      a.textContent = msg;
+      a.className = `alert ${type}`;
+      setTimeout(() => a.className = 'alert hidden', 4000);
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Yuklanmoqda...';
+
+      const data = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          showAlert('✅ ' + result.message, 'success');
+          setTimeout(() => window.location.href = result.redirect, 1000);
+        } else {
+          showAlert('❌ ' + result.message, 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<span>Ro\'yxatdan o\'tish</span>';
+        }
+      } catch {
+        showAlert('❌ Server bilan ulanishda xato!', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Ro\'yxatdan o\'tish</span>';
+      }
+    });
+  </script>
+</body>
+</html>
+
